@@ -1,0 +1,676 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cocotte grimace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --bg:#f5ecdf; --card:#fffaf2; --ink:#2b2320; --muted:#7c6c61; --line:#e3d3bd;
+  --coral:#ff6b57; --coral-ink:#fff; --mint:#5fc9a2; --chip:#efe2cf;
+  color-scheme: light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1c1815; --card:#27211c; --ink:#f4ece2; --muted:#b4a596; --line:#3d342c;
+    --coral:#ff7a66; --coral-ink:#1c1815; --mint:#6fd6b0; --chip:#332b25;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1c1815; --card:#27211c; --ink:#f4ece2; --muted:#b4a596; --line:#3d342c;
+  --coral:#ff7a66; --coral-ink:#1c1815; --mint:#6fd6b0; --chip:#332b25;
+  color-scheme: dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+html,body{margin:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:Fredoka,"Trebuchet MS","Segoe UI",system-ui,sans-serif;
+  font-size:16px; line-height:1.4; -webkit-tap-highlight-color:transparent;
+}
+.wrap{max-width:480px;margin:0 auto;padding:14px 16px 40px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.brand{font-weight:700;font-size:1.25rem;letter-spacing:.2px;display:flex;align-items:center;gap:8px}
+.brand svg{width:30px;height:30px}
+.dots{display:flex;gap:6px;list-style:none;margin:0;padding:0}
+.dots li{width:9px;height:9px;border-radius:50%;background:var(--line);transition:.25s}
+.dots li.on{background:var(--coral);width:22px;border-radius:6px}
+.dots li.done{background:var(--mint)}
+.step{display:none}
+.step.active{display:block;animation:pop .25s ease}
+@keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+h1{font-size:1.45rem;margin:2px 0 4px;font-weight:700}
+.tag{display:inline-block;font-size:.78rem;font-weight:600;background:var(--chip);color:var(--muted);padding:3px 10px;border-radius:99px;margin-bottom:6px}
+.hint{color:var(--muted);margin:0 0 12px}
+.stage{position:relative;width:100%;aspect-ratio:1/1;border-radius:22px;overflow:hidden;background:#111;box-shadow:0 10px 30px rgba(0,0,0,.12)}
+.stage video,.stage canvas,.stage .ov{position:absolute;inset:0;width:100%;height:100%}
+.stage video{object-fit:cover}
+.stage canvas{touch-action:none;background:#fff}
+.mirror{transform:scaleX(-1)}
+.stage svg.guide{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.ov{object-fit:cover;pointer-events:none}
+.camerr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px;color:#f4ece2;background:#1c1815}
+.camerr[hidden]{display:none}
+.row{display:flex;gap:10px;margin-top:14px}
+.row .btn{flex:1}
+.btn{
+  appearance:none;border:0;border-radius:16px;padding:14px 16px;font:inherit;font-weight:600;font-size:1rem;cursor:pointer;
+  background:var(--chip);color:var(--ink);transition:transform .1s;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-align:center
+}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--coral);color:var(--coral-ink)}
+.btn:disabled{opacity:.45}
+.filebtn{position:relative;overflow:hidden}
+.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.link{display:block;text-align:center;margin-top:12px;color:var(--muted);text-decoration:underline;text-underline-offset:3px;position:relative;cursor:pointer}
+.link input{position:absolute;inset:0;opacity:0}
+.ctrl{margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px 14px}
+.ctrl label{display:flex;align-items:center;gap:12px;font-weight:500;font-size:.95rem}
+.ctrl label+label{margin-top:8px}
+.ctrl span{min-width:92px}
+input[type=range]{flex:1;accent-color:var(--coral);height:28px}
+.prevrow{display:flex;gap:12px;align-items:center;margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px}
+.prevrow canvas{width:96px;height:96px;flex:none}
+.prevrow p{margin:0;color:var(--muted);font-size:.92rem}
+.field{display:block;margin-bottom:10px}
+.field b{display:block;font-weight:600;font-size:.9rem;margin-bottom:4px}
+.field input[type=text]{width:100%;font:inherit;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.swatches{display:flex;gap:10px;margin:6px 0 4px}
+.sw{width:38px;height:38px;border-radius:50%;border:3px solid transparent;cursor:pointer}
+.sw.on{border-color:var(--ink)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin-top:14px}
+.card h2{font-size:1.05rem;margin:0 0 10px}
+.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.trio figure{margin:0;text-align:center}
+.trio canvas{width:100%;aspect-ratio:1;display:block;border-radius:12px}
+.trio figcaption{font-size:.8rem;color:var(--muted);margin-top:4px}
+#pageImg{width:100%;display:block;border-radius:6px;box-shadow:0 4px 18px rgba(0,0,0,.15);background:#fff}
+.note{font-size:.88rem;color:var(--muted);margin:10px 0 0}
+ol.howto{margin:0;padding-left:20px}
+ol.howto li{margin:4px 0}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;opacity:0;transition:.25s;pointer-events:none;font-weight:500;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%)}
+.spin{display:flex;align-items:center;justify-content:center;padding:30px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 4 36 20 20 36 4 20Z" fill="var(--coral)"/><path d="M20 4v32M4 20h32" stroke="var(--card)" stroke-width="2.5"/><path d="M12 20q8 9 16 0" fill="none" stroke="var(--card)" stroke-width="2.5" stroke-linecap="round"/></svg>
+      Cocotte grimace
+    </div>
+    <ol class="dots" id="dots"><li></li><li></li><li></li><li></li><li></li></ol>
+  </header>
+
+  <!-- ÉTAPE 1 : photo bouche fermée -->
+  <section class="step active" id="s1">
+    <span class="tag">Étape 1 sur 5</span>
+    <h1>Photo bouche fermée</h1>
+    <p class="hint">Visage bien en face : yeux sur la ligne, nez sur le point rouge, menton en bas de l’ovale.</p>
+    <div class="stage">
+      <video id="v1" playsinline muted autoplay></video>
+      <svg class="guide" viewBox="0 0 100 100" aria-hidden="true"></svg>
+      <div class="camerr" id="e1" hidden>
+        <div>La caméra en direct n’est pas disponible ici.<br>Prends la photo avec l’appareil de ton téléphone, tu pourras la recadrer juste après.</div>
+        <label class="btn primary filebtn">Ouvrir l’appareil photo<input type="file" accept="image/*" capture="user" data-photo="1"></label>
+      </div>
+    </div>
+    <div class="row">
+      <button class="btn" id="flip1">Changer de caméra</button>
+      <button class="btn primary" id="shoot1">Prendre la photo</button>
+    </div>
+    <label class="link">ou importer une photo de la galerie<input type="file" accept="image/*" data-photo="1"></label>
+  </section>
+
+  <!-- ÉTAPE 1b : recadrage -->
+  <section class="step" id="s1b">
+    <span class="tag">Étape 1 sur 5</span>
+    <h1>Ajuste le visage</h1>
+    <p class="hint">Glisse avec un doigt, zoome avec deux doigts ou le curseur, pour caler le visage dans le gabarit.</p>
+    <div class="stage"><canvas id="c1" width="900" height="900"></canvas></div>
+    <div class="ctrl"><label><span>Zoom</span><input type="range" id="z1" min="0.5" max="4" step="0.01" value="1"></label></div>
+    <div class="row">
+      <button class="btn" data-go="s1">Reprendre</button>
+      <button class="btn primary" data-go="s2">Valider</button>
+    </div>
+  </section>
+
+  <!-- ÉTAPE 2 : photo bouche ouverte -->
+  <section class="step" id="s2">
+    <span class="tag">Étape 2 sur 5</span>
+    <h1>Photo bouche ouverte</h1>
+    <p class="hint">Superpose ton visage à la première photo (en transparence), puis ouvre grand la bouche !</p>
+    <div class="stage">
+      <video id="v2" playsinline muted autoplay></video>
+      <img class="ov" id="ov2" alt="">
+      <svg class="guide" viewBox="0 0 100 100" aria-hidden="true"></svg>
+      <div class="camerr" id="e2" hidden>
+        <div>La caméra en direct n’est pas disponible ici.<br>Prends la photo bouche ouverte avec l’appareil, tu pourras l’aligner sur la première ensuite.</div>
+        <label class="btn primary filebtn">Ouvrir l’appareil photo<input type="file" accept="image/*" capture="user" data-photo="2"></label>
+      </div>
+    </div>
+    <div class="ctrl"><label><span>Transparence</span><input type="range" id="op2" min="0" max="0.9" step="0.01" value="0.45"></label></div>
+    <div class="row">
+      <button class="btn" id="flip2">Changer de caméra</button>
+      <button class="btn primary" id="shoot2">Prendre la photo</button>
+    </div>
+    <label class="link">ou importer une photo de la galerie<input type="file" accept="image/*" data-photo="2"></label>
+    <button class="btn" style="width:100%;margin-top:10px" data-go="s1b">← Revenir à la photo 1</button>
+  </section>
+
+  <!-- ÉTAPE 2b : alignement -->
+  <section class="step" id="s2b">
+    <span class="tag">Étape 2 sur 5</span>
+    <h1>Aligne les deux photos</h1>
+    <p class="hint">Déplace la photo bouche ouverte pour que les yeux tombent pile sur ceux de la première.</p>
+    <div class="stage"><canvas id="c2" width="900" height="900"></canvas></div>
+    <div class="ctrl">
+      <label><span>Zoom</span><input type="range" id="z2" min="0.5" max="4" step="0.01" value="1"></label>
+      <label><span>Photo 1</span><input type="range" id="op2b" min="0" max="0.9" step="0.01" value="0.45"></label>
+    </div>
+    <div class="row">
+      <button class="btn" data-go="s2">Reprendre</button>
+      <button class="btn primary" data-go="s3">Valider</button>
+    </div>
+  </section>
+
+  <!-- ÉTAPE 3 : zone de la bouche -->
+  <section class="step" id="s3">
+    <span class="tag">Étape 3 sur 5</span>
+    <h1>Cadre la bouche</h1>
+    <p class="hint">Ce losange devient l’intérieur de la cocotte quand on l’ouvre de haut en bas. Place les coins de la bouche sur les pointes gauche et droite.</p>
+    <div class="stage"><canvas id="c3" width="900" height="900"></canvas></div>
+    <div class="ctrl"><label><span>Taille</span><input type="range" id="ms" min="0.2" max="0.9" step="0.005" value="0.5"></label></div>
+    <div class="prevrow"><canvas id="p3" width="300" height="300"></canvas><p>Aperçu de la cocotte ouverte : la mâchoire du haut et celle du bas se séparent au milieu.</p></div>
+    <div class="row">
+      <button class="btn" data-go="s2b">Retour</button>
+      <button class="btn primary" data-go="s4">Valider</button>
+    </div>
+  </section>
+
+  <!-- ÉTAPE 4 : textes -->
+  <section class="step" id="s4">
+    <span class="tag">Étape 4 sur 5</span>
+    <h1>Les messages cachés</h1>
+    <p class="hint">Ils apparaissent quand on soulève les rabats à l’intérieur.</p>
+    <div class="grid2">
+      <label class="field"><b>Message 1</b><input type="text" maxlength="40" class="fortune" value="Oui !"></label>
+      <label class="field"><b>Message 2</b><input type="text" maxlength="40" class="fortune" value="Jamais de la vie"></label>
+      <label class="field"><b>Message 3</b><input type="text" maxlength="40" class="fortune" value="Peut-être…"></label>
+      <label class="field"><b>Message 4</b><input type="text" maxlength="40" class="fortune" value="Redemande plus tard"></label>
+    </div>
+    <div class="card" style="margin-top:6px">
+      <h2>Ouverture de gauche à droite</h2>
+      <p class="note" style="margin:0 0 8px">Quand on ouvre dans l’autre sens, on découvre « l’intérieur de la tête ».</p>
+      <label class="field"><b>Texte</b><input type="text" maxlength="40" id="headText" value="Que du vent !"></label>
+      <div class="swatches" id="sw"></div>
+    </div>
+    <div class="row">
+      <button class="btn" data-go="s3">Retour</button>
+      <button class="btn primary" data-go="s5">Générer le gabarit</button>
+    </div>
+  </section>
+
+  <!-- ÉTAPE 5 : résultat -->
+  <section class="step" id="s5">
+    <span class="tag">Étape 5 sur 5</span>
+    <h1>Ton gabarit est prêt</h1>
+    <div class="card" style="margin-top:8px">
+      <h2>Aperçu de la cocotte</h2>
+      <div class="trio">
+        <figure><canvas id="pv1" width="300" height="300"></canvas><figcaption>Fermée</figcaption></figure>
+        <figure><canvas id="pv2" width="300" height="300"></canvas><figcaption>Ouverte haut/bas</figcaption></figure>
+        <figure><canvas id="pv3" width="300" height="300"></canvas><figcaption>Ouverte gauche/droite</figcaption></figure>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Page A4 à imprimer</h2>
+      <div id="pageBox"><div class="spin">Préparation de la page…</div></div>
+      <div class="row">
+        <button class="btn primary" id="dlPdf">Télécharger le PDF</button>
+        <button class="btn" id="dlPng">Image PNG</button>
+      </div>
+      <p class="note" id="dlNote">Imprime à 100 % (taille réelle), sans « ajuster à la page ».</p>
+    </div>
+    <div class="card">
+      <h2>Pliage</h2>
+      <ol class="howto">
+        <li>Découpe le carré en suivant le pointillé.</li>
+        <li>Pose-le image contre la table, plie et marque les deux diagonales.</li>
+        <li>Rabats les 4 coins au centre : le visage apparaît.</li>
+        <li>Retourne le pliage.</li>
+        <li>Rabats encore les 4 coins au centre (les messages sont dessous).</li>
+        <li>Plie en deux dans les deux sens, puis glisse pouces et index sous les 4 carrés du visage.</li>
+      </ol>
+      <p class="note">Ouvre de haut en bas : la bouche s’ouvre. De gauche à droite : surprise !</p>
+    </div>
+    <div class="row">
+      <button class="btn" data-go="s4">Modifier</button>
+      <button class="btn" id="restart">Recommencer</button>
+    </div>
+  </section>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+
+const state = {
+  p1: null, p2: null,
+  ov: 0.45,
+  mz: { x: 0.5, y: 0.7, s: 0.5 },
+  head: { text: "Que du vent !", color: "#7fd6b5" }
+};
+const HEAD_COLORS = ["#7fd6b5","#ff8f7a","#ffd36e","#b9b2f0","#8cc8ff"];
+const FORTUNE_COLORS = ["#ffd36e","#ff9f8a","#9fdcc4","#c3bdf5"];
+
+/* ---------- gabarit visage (SVG) ---------- */
+const GUIDE_SVG = `
+  <g fill="none" stroke="rgba(0,0,0,.35)" stroke-width="1.6">
+    <ellipse cx="50" cy="50" rx="30" ry="42"/>
+    <line x1="20" y1="40" x2="80" y2="40"/>
+    <line x1="40" y1="69" x2="60" y2="69"/>
+  </g>
+  <g fill="none" stroke="#fff" stroke-width="0.9" stroke-dasharray="3 2">
+    <ellipse cx="50" cy="50" rx="30" ry="42"/>
+    <line x1="20" y1="40" x2="80" y2="40"/>
+    <circle cx="37" cy="40" r="4.5"/><circle cx="63" cy="40" r="4.5"/>
+    <line x1="40" y1="69" x2="60" y2="69"/>
+  </g>
+  <g stroke="rgba(255,255,255,.35)" stroke-width="0.4">
+    <line x1="50" y1="0" x2="50" y2="100"/><line x1="0" y1="50" x2="100" y2="50"/>
+  </g>
+  <circle cx="50" cy="50" r="1.6" fill="#ff6b57" stroke="#fff" stroke-width="0.5"/>`;
+$$("svg.guide").forEach(s => s.innerHTML = GUIDE_SVG);
+
+function drawGuide(ctx, S, a = 1){
+  ctx.save();
+  ctx.globalAlpha = a;
+  const P = v => v * S / 100;
+  const shapes = () => {
+    ctx.beginPath(); ctx.ellipse(P(50),P(50),P(30),P(42),0,0,Math.PI*2);
+    ctx.moveTo(P(20),P(40)); ctx.lineTo(P(80),P(40));
+    ctx.moveTo(P(40),P(69)); ctx.lineTo(P(60),P(69));
+  };
+  ctx.lineWidth = S*0.016; ctx.strokeStyle = "rgba(0,0,0,.3)"; shapes(); ctx.stroke();
+  ctx.lineWidth = S*0.009; ctx.strokeStyle = "#fff"; ctx.setLineDash([S*.03,S*.02]); shapes(); ctx.stroke();
+  ctx.beginPath(); ctx.arc(P(37),P(40),P(4.5),0,Math.PI*2); ctx.moveTo(P(67.5),P(40)); ctx.arc(P(63),P(40),P(4.5),0,Math.PI*2); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.lineWidth = S*0.003; ctx.strokeStyle = "rgba(255,255,255,.5)";
+  ctx.beginPath(); ctx.moveTo(S/2,0); ctx.lineTo(S/2,S); ctx.moveTo(0,S/2); ctx.lineTo(S,S/2); ctx.stroke();
+  ctx.fillStyle = "#ff6b57"; ctx.beginPath(); ctx.arc(S/2,S/2,S*.016,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
+/* ---------- photos ---------- */
+function makePhoto(src){
+  return { src, w: src.width, h: src.height, z: 1, x: 0, y: 0 };
+}
+function drawPhoto(ctx, p, S){
+  if(!p) return;
+  const s0 = Math.max(S/p.w, S/p.h) * p.z;
+  const dw = p.w*s0, dh = p.h*s0;
+  ctx.drawImage(p.src, S/2 + p.x*S - dw/2, S/2 + p.y*S - dh/2, dw, dh);
+}
+function blank(N, bg = "#fff"){
+  const c = document.createElement("canvas"); c.width = c.height = N;
+  const ctx = c.getContext("2d"); ctx.fillStyle = bg; ctx.fillRect(0,0,N,N);
+  return [c, ctx];
+}
+function renderFace(N){ const [c,ctx] = blank(N); drawPhoto(ctx, state.p1, N); return c; }
+function renderMouth(N){
+  const [c,ctx] = blank(N);
+  const {x,y,s} = state.mz, Sf = N/s;
+  ctx.save(); ctx.translate(-(x - s/2)*Sf, -(y - s/2)*Sf); drawPhoto(ctx, state.p2, Sf); ctx.restore();
+  return c;
+}
+function wrapText(ctx, text, maxW){
+  const words = text.split(/\s+/).filter(Boolean); const lines = []; let cur = "";
+  for(const w of words){
+    const t = cur ? cur + " " + w : w;
+    if(ctx.measureText(t).width > maxW && cur){ lines.push(cur); cur = w; } else cur = t;
+  }
+  if(cur) lines.push(cur);
+  return lines;
+}
+function renderHead(N){
+  const [c,ctx] = blank(N, state.head.color);
+  ctx.fillStyle = "rgba(255,255,255,.35)";
+  [[.22,.3,.05],[.78,.28,.035],[.3,.76,.03],[.74,.72,.055],[.5,.14,.025],[.5,.88,.03]].forEach(([x,y,r])=>{ctx.beginPath();ctx.arc(x*N,y*N,r*N,0,Math.PI*2);ctx.fill();});
+  let fs = N*.12;
+  ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = "#2b2320";
+  let lines;
+  do { ctx.font = `700 ${fs}px Fredoka, "Trebuchet MS", sans-serif`; lines = wrapText(ctx, state.head.text || "", N*.5); fs *= .92; }
+  while((lines.length*fs*1.15 > N*.42 || lines.some(l=>ctx.measureText(l).width > N*.6)) && fs > N*.03);
+  const lh = fs*1.15/.92;
+  lines.forEach((l,i)=> ctx.fillText(l, N/2, N/2 + (i - (lines.length-1)/2)*lh));
+  return c;
+}
+function loadFile(file, cb){
+  const img = new Image(); const url = URL.createObjectURL(file);
+  img.onload = () => {
+    const k = Math.min(1, 1600/Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement("canvas");
+    c.width = Math.round(img.naturalWidth*k); c.height = Math.round(img.naturalHeight*k);
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    URL.revokeObjectURL(url); cb(c);
+  };
+  img.onerror = () => toast("Impossible de lire cette image");
+  img.src = url;
+}
+
+/* ---------- caméra ---------- */
+let stream = null, facing = "user";
+function stopCam(){ if(stream){ stream.getTracks().forEach(t=>t.stop()); stream = null; } }
+async function startCam(n){
+  stopCam();
+  const v = $("#v"+n);
+  $("#e"+n).hidden = true; $("#shoot"+n).disabled = false; $("#flip"+n).disabled = false;
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ camFail(n); return; }
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing, width:{ideal:1440}, height:{ideal:1440} }, audio:false });
+    if(current !== "s"+n){ stopCam(); return; }
+    v.srcObject = stream;
+    v.classList.toggle("mirror", facing === "user");
+    await v.play().catch(()=>{});
+  }catch(e){ camFail(n); }
+}
+function camFail(n){ $("#e"+n).hidden = false; $("#shoot"+n).disabled = true; $("#flip"+n).disabled = true; }
+function grab(v){
+  const vw = v.videoWidth, vh = v.videoHeight; if(!vw) return null;
+  const s = Math.min(vw, vh), N = Math.min(s, 1400);
+  const [c, ctx] = blank(N);
+  if(facing === "user"){ ctx.translate(N,0); ctx.scale(-1,1); }
+  ctx.drawImage(v, (vw-s)/2, (vh-s)/2, s, s, 0, 0, N, N);
+  return c;
+}
+[1,2].forEach(n=>{
+  $("#shoot"+n).addEventListener("click", ()=>{
+    const c = grab($("#v"+n)); if(!c){ toast("La caméra démarre, réessaie"); return; }
+    setPhoto(n, c);
+  });
+  $("#flip"+n).addEventListener("click", ()=>{ facing = facing === "user" ? "environment" : "user"; startCam(n); });
+});
+$$("input[type=file][data-photo]").forEach(inp=>{
+  inp.addEventListener("change", ()=>{
+    const f = inp.files && inp.files[0]; if(!f) return;
+    const n = +inp.dataset.photo;
+    loadFile(f, c => setPhoto(n, c));
+    inp.value = "";
+  });
+});
+function setPhoto(n, c){
+  if(n === 1){ state.p1 = makePhoto(c); $("#z1").value = 1; go("s1b"); }
+  else { state.p2 = makePhoto(c); $("#z2").value = 1; go("s2b"); }
+}
+$("#op2").addEventListener("input", e=>{ state.ov = +e.target.value; $("#ov2").style.opacity = state.ov; $("#op2b").value = state.ov; });
+$("#op2b").addEventListener("input", e=>{ state.ov = +e.target.value; $("#op2").value = state.ov; draw2(); });
+
+/* ---------- glisser / zoomer ---------- */
+function gestures(canvas, onDrag, onPinch){
+  const pts = new Map();
+  canvas.addEventListener("pointerdown", e=>{ canvas.setPointerCapture(e.pointerId); pts.set(e.pointerId, {x:e.clientX, y:e.clientY}); });
+  canvas.addEventListener("pointermove", e=>{
+    if(!pts.has(e.pointerId)) return;
+    const r = canvas.getBoundingClientRect(), prev = pts.get(e.pointerId), cur = {x:e.clientX, y:e.clientY};
+    if(pts.size === 1) onDrag((cur.x-prev.x)/r.width, (cur.y-prev.y)/r.width);
+    else if(pts.size === 2 && onPinch){
+      const o = [...pts.entries()].find(([k])=>k!==e.pointerId)[1];
+      const d0 = Math.hypot(prev.x-o.x, prev.y-o.y), d1 = Math.hypot(cur.x-o.x, cur.y-o.y);
+      if(d0 > 0) onPinch(d1/d0);
+    }
+    pts.set(e.pointerId, cur);
+  });
+  const end = e => pts.delete(e.pointerId);
+  canvas.addEventListener("pointerup", end); canvas.addEventListener("pointercancel", end);
+}
+function panZoom(canvas, key, zoomEl, redraw){
+  gestures(canvas,
+    (dx,dy)=>{ const p = state[key]; if(!p) return; p.x += dx; p.y += dy; redraw(); },
+    k=>{ const p = state[key]; if(!p) return; p.z = clamp(p.z*k, .5, 4); zoomEl.value = p.z; redraw(); });
+  zoomEl.addEventListener("input", ()=>{ const p = state[key]; if(p){ p.z = +zoomEl.value; redraw(); } });
+}
+function draw1(){
+  const c = $("#c1"), ctx = c.getContext("2d"), S = c.width;
+  ctx.fillStyle = "#fff"; ctx.fillRect(0,0,S,S); drawPhoto(ctx, state.p1, S); drawGuide(ctx, S);
+}
+function draw2(){
+  const c = $("#c2"), ctx = c.getContext("2d"), S = c.width;
+  ctx.fillStyle = "#fff"; ctx.fillRect(0,0,S,S); drawPhoto(ctx, state.p2, S);
+  ctx.globalAlpha = state.ov; drawPhoto(ctx, state.p1, S); ctx.globalAlpha = 1;
+  drawGuide(ctx, S, .6);
+}
+function diamondPath(ctx, cx, cy, h){
+  ctx.moveTo(cx, cy-h); ctx.lineTo(cx+h, cy); ctx.lineTo(cx, cy+h); ctx.lineTo(cx-h, cy); ctx.closePath();
+}
+function draw3(){
+  const c = $("#c3"), ctx = c.getContext("2d"), S = c.width, {x,y,s} = state.mz;
+  ctx.fillStyle = "#fff"; ctx.fillRect(0,0,S,S); drawPhoto(ctx, state.p2, S);
+  const cx = x*S, cy = y*S, h = s*S/2;
+  ctx.save(); ctx.beginPath(); ctx.rect(0,0,S,S); diamondPath(ctx, cx, cy, h);
+  ctx.fillStyle = "rgba(20,14,10,.55)"; ctx.fill("evenodd"); ctx.restore();
+  ctx.save(); ctx.lineWidth = S*.006; ctx.strokeStyle = "#ff6b57";
+  ctx.beginPath(); diamondPath(ctx, cx, cy, h); ctx.stroke();
+  ctx.lineWidth = S*.003; ctx.strokeStyle = "rgba(255,255,255,.8)"; ctx.setLineDash([S*.015,S*.012]);
+  ctx.beginPath(); ctx.moveTo(cx-h, cy); ctx.lineTo(cx+h, cy); ctx.moveTo(cx, cy-h); ctx.lineTo(cx, cy+h); ctx.stroke();
+  ctx.restore();
+  drawOpenPreview($("#p3"));
+}
+panZoom($("#c1"), "p1", $("#z1"), draw1);
+panZoom($("#c2"), "p2", $("#z2"), draw2);
+gestures($("#c3"),
+  (dx,dy)=>{ state.mz.x = clamp(state.mz.x+dx, 0, 1); state.mz.y = clamp(state.mz.y+dy, 0, 1); draw3(); },
+  k=>{ state.mz.s = clamp(state.mz.s*k, .2, .9); $("#ms").value = state.mz.s; draw3(); });
+$("#ms").addEventListener("input", e=>{ state.mz.s = +e.target.value; draw3(); });
+
+/* ---------- aperçus ---------- */
+function drawDiamondView(canvas, view, bg){
+  const ctx = canvas.getContext("2d"), S = canvas.width;
+  ctx.clearRect(0,0,S,S);
+  ctx.fillStyle = bg; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(0,0,S,S,S*.08) : ctx.rect(0,0,S,S); ctx.fill();
+  ctx.save(); ctx.beginPath(); diamondPath(ctx, S/2, S/2, S*.46); ctx.clip();
+  ctx.drawImage(view, S*.04, S*.04, S*.92, S*.92); ctx.restore();
+  ctx.strokeStyle = "rgba(0,0,0,.25)"; ctx.lineWidth = S*.008;
+  ctx.beginPath(); diamondPath(ctx, S/2, S/2, S*.46); ctx.moveTo(S*.04,S/2); ctx.lineTo(S*.96,S/2); ctx.moveTo(S/2,S*.04); ctx.lineTo(S/2,S*.96); ctx.stroke();
+}
+function drawOpenPreview(canvas){ drawDiamondView(canvas, renderMouth(400), "#efe2cf"); }
+
+/* ---------- construction du gabarit ---------- */
+function affine(src, dst){
+  const [[x0,y0],[x1,y1],[x2,y2]] = src;
+  const det = x0*(y1-y2) - x1*(y0-y2) + x2*(y0-y1);
+  const solve = (v0,v1,v2) => [
+    (v0*(y1-y2) - v1*(y0-y2) + v2*(y0-y1))/det,
+    (x0*(v1-v2) - x1*(v0-v2) + x2*(v0-v1))/det,
+    (x0*(y1*v2-y2*v1) - x1*(y0*v2-y2*v0) + x2*(y0*v1-y1*v0))/det
+  ];
+  const [a,c,e] = solve(dst[0][0], dst[1][0], dst[2][0]);
+  const [b,d,f] = solve(dst[0][1], dst[1][1], dst[2][1]);
+  return [a,b,c,d,e,f];
+}
+function drawTri(ctx, img, viewTri, tplTri, T){
+  const N = img.width;
+  const src = viewTri.map(([x,y])=>[x*N, y*N]);
+  const dst = tplTri.map(([x,y])=>[x*T, y*T]);
+  const gx = (dst[0][0]+dst[1][0]+dst[2][0])/3, gy = (dst[0][1]+dst[1][1]+dst[2][1])/3;
+  ctx.save();
+  ctx.beginPath();
+  dst.forEach(([x,y],i)=>{ const dx = x-gx, dy = y-gy, l = Math.hypot(dx,dy)||1, px = x + dx/l*2, py = y + dy/l*2; i ? ctx.lineTo(px,py) : ctx.moveTo(px,py); });
+  ctx.closePath(); ctx.clip();
+  ctx.setTransform(...affine(src, dst));
+  ctx.drawImage(img, 0, 0);
+  ctx.restore();
+}
+/* Correspondances triangle du gabarit -> vue de la cocotte ouverte.
+   Bouche (ouverture haut/bas) : bandes gauche et droite du carré.
+   Intérieur de la tête (ouverture gauche/droite) : bandes haut et bas. */
+const MOUTH_TRIS = [
+  [[[0,.25],[0,.5],[.25,.25]], [[0,.5],[.5,.5],[.5,0]]],
+  [[[0,.75],[0,.5],[.25,.75]], [[0,.5],[.5,.5],[.5,1]]],
+  [[[1,.25],[1,.5],[.75,.25]], [[1,.5],[.5,.5],[.5,0]]],
+  [[[1,.75],[1,.5],[.75,.75]], [[1,.5],[.5,.5],[.5,1]]]
+];
+const HEAD_TRIS = [
+  [[[.25,0],[.5,0],[.25,.25]], [[.5,0],[.5,.5],[0,.5]]],
+  [[[.75,0],[.5,0],[.75,.25]], [[.5,0],[.5,.5],[1,.5]]],
+  [[[.25,1],[.5,1],[.25,.75]], [[.5,1],[.5,.5],[0,.5]]],
+  [[[.75,1],[.5,1],[.75,.75]], [[.5,1],[.5,.5],[1,.5]]]
+];
+function getFortunes(){ return $$(".fortune").map(i=>i.value.trim()); }
+function buildTemplate(T){
+  const [c, ctx] = blank(T);
+  const F = renderFace(1200), M = renderMouth(1200), H = renderHead(1200);
+  const q = T/4, h = 600;
+  ctx.drawImage(F, 0,0,h,h, 0,0,q,q);
+  ctx.drawImage(F, h,0,h,h, T-q,0,q,q);
+  ctx.drawImage(F, 0,h,h,h, 0,T-q,q,q);
+  ctx.drawImage(F, h,h,h,h, T-q,T-q,q,q);
+  MOUTH_TRIS.forEach(([tpl, view]) => drawTri(ctx, M, view, tpl, T));
+  HEAD_TRIS.forEach(([tpl, view]) => drawTri(ctx, H, view, tpl, T));
+  // messages : 4 petits losanges, le bas du texte tourné vers le centre
+  const fort = getFortunes();
+  [[.5,.25,0],[.75,.5,90],[.5,.75,180],[.25,.5,-90]].forEach(([cx,cy,rot],i)=>{
+    ctx.save(); ctx.beginPath(); diamondPath(ctx, cx*T, cy*T, T*.25); ctx.fillStyle = FORTUNE_COLORS[i]; ctx.fill();
+    ctx.translate(cx*T, cy*T); ctx.rotate(rot*Math.PI/180);
+    ctx.fillStyle = "#2b2320"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    let fs = T*.042, lines;
+    do { ctx.font = `700 ${fs}px Fredoka, "Trebuchet MS", sans-serif`; lines = wrapText(ctx, fort[i] || "", T*.24); fs *= .92; }
+    while((lines.length > 3 || lines.some(l=>ctx.measureText(l).width > T*.28)) && fs > T*.015);
+    const lh = fs/.92*1.12;
+    lines.forEach((l,k)=> ctx.fillText(l, 0, (k - (lines.length-1)/2)*lh));
+    ctx.restore();
+  });
+  // repères de pliage
+  ctx.save(); ctx.strokeStyle = "rgba(0,0,0,.28)"; ctx.lineWidth = T*.0015;
+  ctx.beginPath(); diamondPath(ctx, T/2, T/2, T/2);
+  ctx.moveTo(T*.25,T*.25); ctx.lineTo(T*.75,T*.75); ctx.moveTo(T*.75,T*.25); ctx.lineTo(T*.25,T*.75);
+  ctx.stroke(); ctx.restore();
+  return c;
+}
+let pageCanvas = null;
+function buildPage(){
+  const W = 2480, H = 3508, mm = W/210;
+  const [c, ctx] = blank(W);
+  c.height = H; ctx.fillStyle = "#fff"; ctx.fillRect(0,0,W,H);
+  const T = Math.round(190*mm), x0 = Math.round(10*mm), y0 = Math.round(12*mm);
+  ctx.drawImage(buildTemplate(T), x0, y0);
+  ctx.save(); ctx.strokeStyle = "#555"; ctx.lineWidth = 3; ctx.setLineDash([22,14]);
+  ctx.strokeRect(x0, y0, T, T); ctx.restore();
+  ctx.fillStyle = "#555"; ctx.font = `${5*mm}px sans-serif`; ctx.textBaseline = "bottom";
+  ctx.fillText("✂", x0, y0 - 1*mm);
+  ctx.font = `500 ${3.2*mm}px Fredoka, "Trebuchet MS", sans-serif`; ctx.fillStyle = "#777";
+  ctx.textAlign = "right"; ctx.fillText("Imprimer à 100 % · format A4", x0 + T, y0 - 1.5*mm); ctx.textAlign = "left";
+  let y = y0 + T + 12*mm;
+  ctx.textBaseline = "alphabetic"; ctx.fillStyle = "#2b2320";
+  ctx.font = `700 ${6*mm}px Fredoka, "Trebuchet MS", sans-serif`;
+  ctx.fillText("Cocotte grimace : le pliage", x0, y); y += 9*mm;
+  const steps = [
+    "Découpe le carré en suivant le pointillé.",
+    "Pose-le image contre la table, plie et marque les deux diagonales.",
+    "Rabats les 4 coins au centre : le visage apparaît.",
+    "Retourne le pliage.",
+    "Rabats encore les 4 coins au centre (les messages sont dessous).",
+    "Plie en deux dans les deux sens, puis glisse pouces et index sous les 4 carrés du visage."
+  ];
+  ctx.font = `500 ${4.3*mm}px Fredoka, "Trebuchet MS", sans-serif`;
+  steps.forEach((s,i)=>{
+    const lines = wrapText(ctx, s, 175*mm);
+    ctx.fillStyle = "#ff6b57"; ctx.font = `700 ${4.3*mm}px Fredoka, "Trebuchet MS", sans-serif`;
+    ctx.fillText(String(i+1), x0, y);
+    ctx.fillStyle = "#2b2320"; ctx.font = `500 ${4.3*mm}px Fredoka, "Trebuchet MS", sans-serif`;
+    lines.forEach(l=>{ ctx.fillText(l, x0 + 8*mm, y); y += 6.3*mm; });
+    y += 1*mm;
+  });
+  y += 3*mm; ctx.font = `600 ${4.3*mm}px Fredoka, "Trebuchet MS", sans-serif`;
+  ctx.fillText("Ouvre de haut en bas : la bouche s’ouvre. De gauche à droite : surprise !", x0, y);
+  return c;
+}
+
+/* ---------- textes ---------- */
+const sw = $("#sw");
+HEAD_COLORS.forEach(col=>{
+  const b = document.createElement("button"); b.className = "sw" + (col === state.head.color ? " on" : "");
+  b.style.background = col; b.setAttribute("aria-label", "Couleur " + col);
+  b.addEventListener("click", ()=>{ state.head.color = col; $$(".sw").forEach(x=>x.classList.remove("on")); b.classList.add("on"); });
+  sw.appendChild(b);
+});
+$("#headText").addEventListener("input", e=> state.head.text = e.target.value);
+
+/* ---------- résultat ---------- */
+async function buildResult(){
+  try{ await Promise.all([document.fonts.load('700 40px Fredoka'), document.fonts.load('500 40px Fredoka')]); }catch(e){}
+  const pv1 = $("#pv1"), ctx = pv1.getContext("2d"), S = pv1.width;
+  ctx.drawImage(renderFace(S), 0, 0);
+  ctx.strokeStyle = "rgba(0,0,0,.35)"; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(S/2,0); ctx.lineTo(S/2,S); ctx.moveTo(0,S/2); ctx.lineTo(S,S/2); ctx.stroke();
+  drawOpenPreview($("#pv2"));
+  drawDiamondView($("#pv3"), renderHead(400), "#efe2cf");
+  await new Promise(r=>setTimeout(r,30));
+  pageCanvas = buildPage();
+  const img = new Image(); img.id = "pageImg"; img.alt = "Page A4 du gabarit";
+  img.src = pageCanvas.toDataURL("image/jpeg", .85);
+  const box = $("#pageBox"); box.innerHTML = ""; box.appendChild(img);
+}
+function save(filename, data){
+  const blob = data instanceof Blob ? data : new Blob([data], { type: filename.endsWith(".pdf") ? "application/pdf" : "application/octet-stream" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 60000);
+  toast("Téléchargement lancé");
+}
+$("#dlPdf").addEventListener("click", async ()=>{
+  if(!pageCanvas) return;
+  if(!window.jspdf){ toast("PDF indisponible, essaie l’image PNG"); return; }
+  const pdf = new window.jspdf.jsPDF({ unit:"mm", format:"a4", orientation:"portrait" });
+  pdf.addImage(pageCanvas.toDataURL("image/jpeg", .92), "JPEG", 0, 0, 210, 297);
+  save("cocotte-grimace.pdf", pdf.output("arraybuffer"));
+});
+$("#dlPng").addEventListener("click", ()=>{
+  if(!pageCanvas) return;
+  pageCanvas.toBlob(b => b && save("cocotte-grimace.png", b), "image/png");
+});
+
+/* ---------- navigation ---------- */
+const DOT = { s1:0, s1b:0, s2:1, s2b:1, s3:2, s4:3, s5:4 };
+let current = "s1";
+function go(id){
+  if((id === "s1b" || id === "s2") && !state.p1){ id = "s1"; }
+  if((id === "s2b" || id === "s3") && !state.p2){ id = state.p1 ? "s2" : "s1"; }
+  current = id;
+  if(id !== "s1" && id !== "s2") stopCam();
+  $$(".step").forEach(s=>s.classList.toggle("active", s.id === id));
+  $$("#dots li").forEach((d,i)=>{ d.classList.toggle("on", i === DOT[id]); d.classList.toggle("done", i < DOT[id]); });
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  if(id === "s1") startCam(1);
+  if(id === "s1b") draw1();
+  if(id === "s2"){ $("#ov2").src = renderFace(800).toDataURL("image/jpeg", .85); $("#ov2").style.opacity = state.ov; startCam(2); }
+  if(id === "s2b"){ $("#op2b").value = state.ov; draw2(); }
+  if(id === "s3"){ $("#ms").value = state.mz.s; draw3(); }
+  if(id === "s5"){ $("#pageBox").innerHTML = '<div class="spin">Préparation de la page…</div>'; buildResult(); }
+}
+$$("[data-go]").forEach(b => b.addEventListener("click", ()=> go(b.dataset.go)));
+$("#restart").addEventListener("click", ()=>{ state.p1 = state.p2 = null; state.mz = { x:.5, y:.7, s:.5 }; pageCanvas = null; go("s1"); });
+
+let tt;
+function toast(msg){ const t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(tt); tt = setTimeout(()=>t.classList.remove("show"), 2600); }
+
+go("s1");
+})();
+</script>
+</body>
+</html>
